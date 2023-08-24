@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  app-metrics
+  namespace: default
+  labels:
+    app:  app-metrics
+    pedro: app-metrics
+spec:
+  selector:
+    matchLabels:
+      app: app-metrics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app:  app-metrics
+        pedro: app-metrics
+    spec:
+      containers:
+      - name:  app-metrics
+        image:  pedrofilhojp/app-metrics:1.0
+        ports:
+        - containerPort:  8081
+          name:  app-metrics
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-metrics
+  namespace: default
+type: Opaque
+data:
+    NATS_BROKER_HOST: "nats://natsdev.incloud.intelbras.com.br:5555"
+    password: {{ .Values.password | b64enc }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-metrics
+  namespace: default
+  labels:
+    app: app-metrics
+spec:
+  selector:
+    app: app-metrics
+  type: ClusterIP
+  sessionAffinity: None
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+  - name: app-metrics
+    protocol: TCP
+    port: 8081
+    targetPort: 8081
